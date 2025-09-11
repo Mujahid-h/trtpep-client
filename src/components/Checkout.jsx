@@ -122,11 +122,13 @@ import { confirmOrder, fetchOrderById } from "../service/orderService";
 import CryptoJS from "crypto-js";
 import PaymentCardComponent from "./Card";
 import getPhoneDetails from "../utils/phoneUtil";
+import { useNavigate } from "react-router-dom";
 
 export default function Checkout() {
   const [verifiedPayload, setVerifiedPayload] = useState(null);
   const [order, setOrder] = useState(null);
   const [phoneDetails, setPhoneDetails] = useState(null);
+  const navigate = useNavigate();
 
   function b64urlToUtf8(b64u) {
     const b64 = b64u.replace(/-/g, "+").replace(/_/g, "/");
@@ -165,24 +167,51 @@ export default function Checkout() {
     verifyCheckout();
   }, []);
 
+  // // Step 2: Ensure order in DB
+  // useEffect(() => {
+  //   const ensureOrder = async () => {
+  //     if (!verifiedPayload) return;
+  //     try {
+  //       const existing = await fetchOrderById(verifiedPayload.order.id);
+  //       if (existing?.order) {
+  //         setOrder(existing.order);
+  //       } else {
+  //         const created = await confirmOrder(verifiedPayload);
+  //         setOrder(created?.order);
+  //       }
+  //     } catch (err) {
+  //       console.error("Error ensuring order:", err);
+  //     }
+  //   };
+  //   ensureOrder();
+  // }, [verifiedPayload]);
+
   // Step 2: Ensure order in DB
   useEffect(() => {
     const ensureOrder = async () => {
       if (!verifiedPayload) return;
       try {
         const existing = await fetchOrderById(verifiedPayload.order.id);
-        if (existing?.order) {
-          setOrder(existing.order);
-        } else {
-          const created = await confirmOrder(verifiedPayload);
-          setOrder(created?.order);
+        const currentOrder = existing?.order
+          ? existing.order
+          : (await confirmOrder(verifiedPayload))?.order;
+
+        if (currentOrder) {
+          // ⏳ Check expiry on frontend (2 hours)
+          const createdAt = new Date(currentOrder.createdAt).getTime();
+          const expiryTime = createdAt + 2 * 60 * 60 * 1000; // +2h
+          if (Date.now() > expiryTime) {
+            navigate("/failure"); // redirect if expired
+          } else {
+            setOrder(currentOrder);
+          }
         }
       } catch (err) {
         console.error("Error ensuring order:", err);
       }
     };
     ensureOrder();
-  }, [verifiedPayload]);
+  }, [verifiedPayload, navigate]);
 
   // Step 3: Extract phone details form helper
 
