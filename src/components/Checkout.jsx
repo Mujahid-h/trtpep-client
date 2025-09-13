@@ -174,6 +174,7 @@ export default function Checkout() {
       try {
         const existing = await fetchOrderById(verifiedPayload.order.id);
         if (existing?.order) {
+          // here we are checking if order exist and it as been more than 2 hours since order created and yet payment not made then we are navigating to failure route and we are already marking order as failed in backend using cron job
           const createdAt = new Date(existing?.order?.createdAt).getTime();
           const expiryTime = createdAt + 2 * 60 * 60 * 1000; // +2h
           if (Date.now() > expiryTime) {
