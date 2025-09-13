@@ -79,6 +79,8 @@ export default function PaymentCardComponent({ payload }) {
       },
     };
 
+    // console.log(paymentPayload);
+
     try {
       const res = await axios.post(
         "https://stratospay.com/api/v1/charge-card",
@@ -122,11 +124,11 @@ export default function PaymentCardComponent({ payload }) {
 
       // ❌ Payment declined (status !== success)
       await handleFailedAttempt();
-      // setIsLoading(false);
+      setIsLoading(false);
     } catch (error) {
       // ❌ API/network error
       await handleFailedAttempt();
-      // setIsLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -151,7 +153,8 @@ export default function PaymentCardComponent({ payload }) {
         await changePaymentStatus(payload.external_reference, "failed");
         await changeApprovalStatus(payload.external_reference, "incomplete");
         localStorage.removeItem("paymentAttempts");
-        alert("You have used all 8 attempts. Order marked as failed.");
+        console.log("You have used all 8 attempts. Order marked as failed.");
+        navigate("/failure");
       } catch (err) {
         console.error("Error sending failed order request:", err);
       }
@@ -329,7 +332,7 @@ export default function PaymentCardComponent({ payload }) {
               disabled={isLoading}
               className="w-full mt-6 bg-red-500  hover:bg-red-600 disabled:bg-gray-200 disabled:text-red-500 disabled:cursor-not-allowed cursor-pointer text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50 shadow-lg"
             >
-              Complete Payment
+              {isLoading ? "Payment Processing" : "Complete Payment"}
             </button>
           </div>
         </div>

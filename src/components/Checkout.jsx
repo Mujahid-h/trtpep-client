@@ -167,51 +167,56 @@ export default function Checkout() {
     verifyCheckout();
   }, []);
 
-  // // Step 2: Ensure order in DB
-  // useEffect(() => {
-  //   const ensureOrder = async () => {
-  //     if (!verifiedPayload) return;
-  //     try {
-  //       const existing = await fetchOrderById(verifiedPayload.order.id);
-  //       if (existing?.order) {
-  //         setOrder(existing.order);
-  //       } else {
-  //         const created = await confirmOrder(verifiedPayload);
-  //         setOrder(created?.order);
-  //       }
-  //     } catch (err) {
-  //       console.error("Error ensuring order:", err);
-  //     }
-  //   };
-  //   ensureOrder();
-  // }, [verifiedPayload]);
-
   // Step 2: Ensure order in DB
   useEffect(() => {
     const ensureOrder = async () => {
       if (!verifiedPayload) return;
       try {
         const existing = await fetchOrderById(verifiedPayload.order.id);
-        const currentOrder = existing?.order
-          ? existing.order
-          : (await confirmOrder(verifiedPayload))?.order;
-
-        if (currentOrder) {
-          // ⏳ Check expiry on frontend (2 hours)
-          const createdAt = new Date(currentOrder.createdAt).getTime();
+        if (existing?.order) {
+          const createdAt = new Date(existing?.order?.createdAt).getTime();
           const expiryTime = createdAt + 2 * 60 * 60 * 1000; // +2h
           if (Date.now() > expiryTime) {
-            navigate("/failure"); // redirect if expired
-          } else {
-            setOrder(currentOrder);
+            navigate("/failure");
           }
+          setOrder(existing.order);
+        } else {
+          const created = await confirmOrder(verifiedPayload);
+          setOrder(created?.order);
         }
       } catch (err) {
         console.error("Error ensuring order:", err);
       }
     };
     ensureOrder();
-  }, [verifiedPayload, navigate]);
+  }, [verifiedPayload]);
+
+  // // Step 2: Ensure order in DB
+  // useEffect(() => {
+  //   const ensureOrder = async () => {
+  //     if (!verifiedPayload) return;
+  //     try {
+  //       const existing = await fetchOrderById(verifiedPayload.order.id);
+  //       const currentOrder = existing?.order
+  //         ? existing.order
+  //         : (await confirmOrder(verifiedPayload))?.order;
+
+  //       if (currentOrder) {
+  //         // ⏳ Check expiry on frontend (2 hours)
+  //         const createdAt = new Date(currentOrder.createdAt).getTime();
+  //         const expiryTime = createdAt + 2 * 60 * 60 * 1000; // +2h
+  //         if (Date.now() > expiryTime) {
+  //           navigate("/failure"); // redirect if expired
+  //         } else {
+  //           setOrder(currentOrder);
+  //         }
+  //       }
+  //     } catch (err) {
+  //       console.error("Error ensuring order:", err);
+  //     }
+  //   };
+  //   ensureOrder();
+  // }, [verifiedPayload, navigate]);
 
   // Step 3: Extract phone details form helper
 
